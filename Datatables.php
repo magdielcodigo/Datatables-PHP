@@ -3,41 +3,33 @@
 require_once 'cnx.php';
 
 Class DataTables{
-    private $daw = null;
-    private $start = null;
-    private $length = null;
-    private $search_key = null;
-    private $order_column_index = null;
-    private $order_column = null;
-    
-    private $list_columns = null;
-    private $query = null;
-    private $filters = null;
-    
-    private $data = null;
-    private $dict = null;
-    
+    private $daw;
+    private $start;
+    private $length;
+    private $search_key;
+    private $order_column_index;
+    private $order_column;
+    private $list_columns;
+    private $query;
+    private $filters;
+    private $data;
+    private $dict;
     private $cnx;
-    function init($post, $query, $list_columns){
+    function __construct($post, $query, $list_columns){
         $this->daw = $post['draw'];
         $this->start = $post['start'];
         $this->length = $post['length'];
         $this->search_key = $post['search']['value'];
         $this->order_column_index = $post['order'][0]['column'];
         $this->order_column = $post['order'][0]['dir'];
-
         $this->list_columns = $list_columns;
         $this->query = $query;
         $this->filters = '';
-
         $this->data = array();
         $this->dict = array();
-
         $this->cnx = (new Cnx())->connection();
-        
-        $this->process($post);
     }
-    function process($post){
+    function process(){
         if($this->search_key){
             if(!strstr(strtoupper($this->query), 'WHERE')){
                 $this->filters = ' WHERE ';

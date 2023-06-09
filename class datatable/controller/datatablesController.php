@@ -3,9 +3,12 @@ require_once '../helper/Datatables.php';
 
 class DatatablesController{
     function set(){
-        $query = 'SELECT * FROM datos_test';
         $list_columns = array('id', 'nombre', 'edad', 'telefono');
-        return (new DataTables($_POST, $query, $list_columns))->process();
+        $config = array('db_type'=>'mysql',
+                        'table'=>'datos_test',
+                        'conditions'=>'',
+                        'extra'=>array());
+        return (new DataTables($_POST, $list_columns, $config))->process();
     }
 }
 

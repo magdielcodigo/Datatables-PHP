@@ -19,13 +19,15 @@ Class DataTables{
     private $db_slc;
     private $conditions;
     private $table;
-    function __construct($post, $query, $list_columns){
+    private $extra_data;
+    function __construct($post, $list_columns, $config){
         $this->daw = $post['draw'];
         $this->start = $post['start'];
         $this->length = $post['length'];
         $this->search_key = $post['search']['value'];
         $this->order_column_index = $post['order'][0]['column'];
         $this->order_column = $post['order'][0]['dir'];
+        $this->extra_data = $config['extra'];
         $this->list_columns = $list_columns;
         $this->filters = '';
         $this->data = array();
@@ -34,7 +36,7 @@ Class DataTables{
         $this->conditions = $config['conditions'] != ''?array('AND '.$config['conditions'], 'WHERE '. $config['conditions']):array('','');        
         $this->table = $config['table'];
         if($this->db_slc == 'sqlserver'){
-            $this->cnx = new BDsql($GLOBALS['global_bdarmoniza']);
+            $this->cnx = new BDsql();
             foreach($list_columns as $col){
                 if(strpos(strtoupper($this->table), 'INNER') != false){
                     $columns_prepared .= $col.",";
@@ -42,10 +44,10 @@ Class DataTables{
                     $columns_prepared .= "[".$col."],";
                 }
             }
-            $this->columns_prepared = rtrim($columns_prepared, ",");
+            $this->columns_prepared = str_replace("DTCHANGENAME","AS",rtrim($columns_prepared, ","));
         }else{
             $this->cnx = (new Cnx())->connection();
-            $this->columns_prepared = "(" . implode(',',$list_columns) . ")";
+            $this->columns_prepared = str_replace("DTCHANGENAME","AS",implode(',',$list_columns));
         }
         $this->query = 'SELECT '.$this->columns_prepared.' FROM ' . $config['table'] . ($config['conditions'] != ''?' WHERE '.$config['conditions']:'');
     }
@@ -60,7 +62,12 @@ Class DataTables{
                 $this->filters = ' WHERE ';
             }
             foreach($this->list_columns as $cols){
-                $this->filters .= $cols . " LIKE '%" . $this->search_key . "%' OR ";
+                if(count(explode("DTCHANGENAME", $cols))>1){
+                    [$column, $name] = explode("DTCHANGENAME", $cols);
+                }else{
+                    $column = $cols;
+                }
+                $this->filters .= $column . " LIKE '%" . $this->search_key . "%' OR ";
             }
             if($this->db_slc == 'sqlserver'){
                 $this->cnx->query('SELECT '.$this->columns_prepared.' FROM '.$this->table.' '.rtrim($this->filters, " OR ") . ' ' . $this->conditions[0]);
@@ -69,7 +76,11 @@ Class DataTables{
                 $res = $this->cnx->query($this->query . rtrim($this->filters, " OR ") . ' LIMIT ' . '10');
             }
         }else{
-            $column_to_oder = $this->list_columns[$this->order_column_index];
+            $normalize_list_columns = array();
+            foreach($this->list_columns as $cols){
+                $normalize_list_columns[] = str_replace("DTCHANGENAME", "AS", $cols);
+            }
+            $column_to_oder = $normalize_list_columns[$this->order_column_index];
             $order = $this->order_column == 'asc' ? $column_to_oder . ' ASC' : $column_to_oder . ' DESC';
             if($this->db_slc == 'sqlserver'){
                 $endPagination = $this->start + $this->length;
@@ -110,6 +121,8 @@ Class DataTables{
         $this->dict['recordsFiltered'] = $count_records;
         $this->dict['draw'] = $this->daw;
         $this->dict['data'] = $this->data;
+        $this->dict['extra'] = $this->extra_data;
+
         echo json_encode($this->dict, JSON_PRETTY_PRINT);
     }
 }

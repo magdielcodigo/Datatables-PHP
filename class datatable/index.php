@@ -34,6 +34,7 @@
     <script src="https://cdn.datatables.net/responsive/2.3.0/js/responsive.bootstrap5.min.js"></script>
     <script>
         let example = null;
+        var datttt = '';
         $(()=>{
             loadTable()
         })
@@ -55,6 +56,9 @@
                             console.log(err)
                         }
                     },
+                    drawCallback: function(settings) {
+                        datttt = settings.json.draw;
+                    },
                     columns:[
                         {
                             data:'id'
@@ -71,7 +75,11 @@
                         {
                             data:null,
                             render:function(data,type,row){
-                                return 'holas';
+                                console.log(datttt);
+                                if(datttt == 1){
+                                    return 'uno entro'
+                                }
+                                return 'holas'
                             }
                         }
                     ]

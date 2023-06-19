@@ -52,13 +52,12 @@ Class DataTables{
         $this->query = 'SELECT '.$this->columns_prepared.' FROM ' . $config['table'] . ($config['conditions'] != ''?' WHERE '.$config['conditions']:'');
     }
     function process(){
-        if($this->search_key){
-            if(!strstr(strtoupper($this->query), 'WHERE') && $this->db_slc != 'sqlserver'){
+        if(!strstr(strtoupper($this->query), 'WHERE') && $this->db_slc != 'sqlserver'){
                 $this->filters = ' WHERE ';
             }else if(strstr(strtoupper($this->query), 'WHERE') && $this->db_slc != 'sqlserver'){
                 $this->filters = ' AND ';
             }
-            if($this->db_slc == 'sqlserver'){
+            if($this->db_slc == 'sqlserver' && !strstr(strtoupper($this->conditions[1]),'WHERE')){
                 $this->filters = ' WHERE ';
             }
             foreach($this->list_columns as $cols){
@@ -70,7 +69,8 @@ Class DataTables{
                 $this->filters .= $column . " LIKE '%" . $this->search_key . "%' OR ";
             }
             if($this->db_slc == 'sqlserver'){
-                $this->cnx->query('SELECT '.$this->columns_prepared.' FROM '.$this->table.' '.rtrim($this->filters, " OR ") . ' ' . $this->conditions[0]);
+                $conditions = $this->conditions[2]!='' ? $this->conditions[2] . ' AND ('.rtrim($this->filters, " OR ").')':rtrim($this->filters, " OR ");
+                $this->cnx->query('SELECT '.$this->columns_prepared.' FROM '.$this->table.' '. $conditions);
                 $this->data = $this->cnx->getResults();
             }else{
                 $res = $this->cnx->query($this->query . rtrim($this->filters, " OR ") . ' LIMIT ' . '10');
@@ -103,7 +103,8 @@ Class DataTables{
     function returnData(){
         if($this->db_slc == 'sqlserver'){
             if($this->search_key){
-                $this->cnx->query('SELECT '.$this->columns_prepared.' FROM '.$this->table.' '.rtrim($this->filters, " OR ").' '.$this->conditions[0]);
+                $conditions = $this->conditions[2]!='' ? $this->conditions[2] . ' AND ('.rtrim($this->filters, " OR ").')':rtrim($this->filters, " OR ");
+                $this->cnx->query('SELECT '.$this->columns_prepared.' FROM '.$this->table.' '. $conditions);
             }else{
                 $this->cnx->query("SELECT COUNT(*) AS 'Count' FROM ".$this->table. " ". $this->conditions[1]);
             }
